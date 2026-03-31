@@ -200,6 +200,14 @@ textarea { min-height: 85px; }
         <label>Primary keyword / search intent</label>
         <input type="text" id="inp-keyword" placeholder="e.g. brand strategy agency">
       </div>
+      <div class="form-row">
+        <label>Author</label>
+        <select id="inp-author">
+          <option value="sam">Sam Parker</option>
+          <option value="bogdan">Bogdan Dumitrache</option>
+          <option value="matt">Matt Connelly</option>
+        </select>
+      </div>
 
       <div class="form-row">
         <label>Additional requirements (optional)</label>
@@ -222,7 +230,7 @@ textarea { min-height: 85px; }
       <div style="background:#f0f7ff;border:1px solid #c5d9f5;border-radius:8px;padding:12px 16px;margin-bottom:1.25rem;">
         <div style="font-size:12px;font-weight:600;color:#2c5fa8;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.04em">Every post is automatically built to include</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
-          <div style="font-size:12px;color:#2c5fa8;display:flex;gap:6px;align-items:flex-start"><span>◆</span><span>TL;DR at the top</span></div>
+          <div style="font-size:12px;color:#2c5fa8;display:flex;gap:6px;align-items:flex-start"><span>◆</span><span>TL;DR at the top (max 5 bullet points)</span></div>
           <div style="font-size:12px;color:#2c5fa8;display:flex;gap:6px;align-items:flex-start"><span>◆</span><span>Primary term definition</span></div>
           <div style="font-size:12px;color:#2c5fa8;display:flex;gap:6px;align-items:flex-start"><span>◆</span><span>Quick Answer section</span></div>
           <div style="font-size:12px;color:#2c5fa8;display:flex;gap:6px;align-items:flex-start"><span>◆</span><span>Quick Steps summary (if applicable)</span></div>
@@ -231,7 +239,7 @@ textarea { min-height: 85px; }
           <div style="font-size:12px;color:#2c5fa8;display:flex;gap:6px;align-items:flex-start"><span>◆</span><span>Key Takeaways section</span></div>
           <div style="font-size:12px;color:#2c5fa8;display:flex;gap:6px;align-items:flex-start"><span>◆</span><span>Key Concepts section</span></div>
           <div style="font-size:12px;color:#2c5fa8;display:flex;gap:6px;align-items:flex-start"><span>◆</span><span>FAQs section at the bottom</span></div>
-          <div style="font-size:12px;color:#2c5fa8;display:flex;gap:6px;align-items:flex-start"><span>◆</span><span>Conversational H1/H2/H3 headings</span></div>
+          <div style="font-size:12px;color:#2c5fa8;display:flex;gap:6px;align-items:flex-start"><span>◆</span><span>Numbered, conversational H1/H2/H3 headings</span></div>
         </div>
       </div>
       <div class="output-label">
@@ -450,6 +458,24 @@ textarea { min-height: 85px; }
 const MODEL = "claude-sonnet-4-20250514";
 let state = {};
 
+const AUTHOR_DATA = {
+  sam: {
+    name: "Sam Parker",
+    role: "Content Strategist",
+    bio: "Sam is a Content Strategist at Paddle Creative with over a decade of experience in digital marketing. Specialising in digital optimisation and integrated campaigns, Sam helps clients navigate the shift toward emerging technologies like AI search and Answer Engine Optimisation (AEO)."
+  },
+  bogdan: {
+    name: "Bogdan Dumitrache",
+    role: "Senior Webflow Developer",
+    bio: "Bogdan has worked on over 100 Webflow projects with fast-growth companies across the globe. As the Paddle Creative Senior Webflow Developer, Bogdan leads the way in ensuring QA of our Webflow delivery and upskilling our Webflow team."
+  },
+  matt: {
+    name: "Matt Connelly",
+    role: "Founder",
+    bio: "Matt Connelly is the Founder of Paddle Creative, where he helps ambitious brands scale with smarter Webflow strategies and measurable marketing results. With 20+ years of experience in marketing and scaling businesses, he is passionate about turning websites into growth engines for fast-growth companies."
+  }
+};
+
 function getKey() { return document.getElementById('api-key').value.trim(); }
 function confirmKey() {
   const v = document.getElementById('api-key').value.trim();
@@ -529,6 +555,8 @@ async function runStage2() {
   state.type = document.getElementById('inp-type').value;
   state.audience = document.getElementById('inp-audience').value;
   state.keyword = document.getElementById('inp-keyword').value;
+  state.authorKey = document.getElementById('inp-author').value;
+  state.author = AUTHOR_DATA[state.authorKey] || AUTHOR_DATA.sam;
   state.extra = document.getElementById('inp-extra').value;
 
   goStage(2);
@@ -556,6 +584,7 @@ async function runStage2() {
       '- Read it aloud — if it sounds awkward, rewrite it.',
       '- Bullet points: keep them short.',
       '- Timeless over trendy: avoid internet slang.',
+      '- Never use em dashes (—). Always use en dashes (–) instead — they look better and improve readability.',
       '',
       'HEADLINES: Spark a reaction — a smile, a raised eyebrow, a double-take. Never indifference. Be bold, stir curiosity.',
       'BAD headline: Streamline Your Website Updates with Webflow.',
@@ -567,7 +596,7 @@ async function runStage2() {
     const sys = `You are a senior content strategist at Paddle Creative, a bold and ambitious brand and creative agency. Your writing is clear, confident and never corporate — it sounds like a smart human, not a bot. You specialise in AEO (Answer Engine Optimisation) and GEO (Generative Engine Optimisation) — writing content that AI systems like ChatGPT, Perplexity and Google AI Overviews can easily extract, quote and recommend.
 
 EVERY blog post you write MUST include ALL of the following sections in this order:
-1. TL;DR — a 2-3 sentence summary at the very top
+1. TL;DR — formatted as bullet points only (no prose), maximum 5 bullets, each bullet one concise sentence. Place at the very top immediately after the H1.
 2. Primary term definition — a clear, citable definition of the main topic
 3. Quick Answer — a direct 1-2 sentence answer to the core question
 4. Quick Steps summary — a brief bulleted overview of steps (if the topic is process-based)
@@ -578,7 +607,7 @@ EVERY blog post you write MUST include ALL of the following sections in this ord
 9. FAQs — at least 3 Q&A pairs at the bottom
 10. CTA block — as specified
 
-Headings must be formatted as H1/H2/H3 in markdown. Use conversational, descriptive headings rather than generic ones — they should feel natural and answer-oriented for AEO. Keep paragraphs to 3-4 sentences max.${tovBlock}`;
+Headings must be formatted as H1/H2/H3 in markdown. ALL H2 and H3 headings must be numbered (e.g. "1. Why Brand Strategy Matters", "2. How to Build a Brand Strategy", "2.1 Define Your Audience"). Use conversational, descriptive headings — natural and answer-oriented for AEO. Keep paragraphs to 3-4 sentences max.${tovBlock}`;
     const prompt = `Write a ${state.words}-word ${state.type} for Paddle Creative's website.
 
 Title: ${state.title}
@@ -595,9 +624,15 @@ After the introduction or first section, insert a mid-content CTA block:
 
 Then continue the rest of the post. End the post with a second closing CTA block in the same format — use a different heading and subheading from the mid-content one, written for someone who has just finished reading the full post.
 
-Format all headings as markdown (# H1, ## H2, ### H3). Write it now — no preamble.`;
+Format all headings as markdown (# H1, ## H2, ### H3). Number all H2 and H3 headings sequentially (e.g. ## 1. First Section, ## 2. Second Section, ### 2.1 Subsection).
 
-    state.content = await callClaude(sys, prompt);
+AUTHOR SECTION: Before the FAQs section, include an ## About the Author section with this exact content — do not rewrite it:
+**${state.author.name}** — *${state.author.role} at Paddle Creative*
+${state.author.bio}
+
+Write it now — no preamble.`;
+
+    state.content = (await callClaude(sys, prompt)).replace(/—/g, '–');
     document.getElementById('out-content').textContent = state.content;
     document.getElementById('btn-stage3').disabled = false;
   } catch(e) {
@@ -932,7 +967,7 @@ For faqs: extract the FAQ questions and answers from the post.`;
       { label: 'CTA Heading', value: meta.cta_heading },
       { label: 'CTA Subheading', value: meta.cta_subheading },
       { label: 'Content (Part 2 — After the CTA)', value: meta.content_part2, large: true },
-      { label: 'Author', value: meta.author },
+      { label: 'Author', value: state.author ? state.author.name : meta.author },
       { label: 'Fact Checked By', value: meta.fact_checked_by },
       { label: 'FAQs to show', value: faqsText },
     ];
@@ -1022,7 +1057,7 @@ ${checkedRecs.map((r,i) => `${i+1}. ${r}`).join('\n')}
 
 Return the full further-refined blog post now.`;
 
-    const refined2 = await callClaude(sys, prompt);
+    const refined2 = (await callClaude(sys, prompt)).replace(/—/g, '–');
     state.refinedContent = refined2;
 
     // Update the refined content output box
@@ -1115,7 +1150,7 @@ ${allRecs.length ? allRecs.map((r,i) => `${i+1}. ${r}`).join('\n') : 'General im
 
 Return the full improved blog post now.`;
 
-    state.refinedContent = await callClaude(sys, prompt);
+    state.refinedContent = (await callClaude(sys, prompt)).replace(/—/g, '–');
     document.getElementById('out-refined').textContent = state.refinedContent;
 
     const sys2 = `You are a content reviewer. Compare an original and refined blog post and write a brief plain-text summary of the key improvements made. Be specific and concise — bullet points, 5-8 items. No preamble.`;
