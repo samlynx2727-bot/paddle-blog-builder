@@ -283,11 +283,11 @@ textarea { min-height: 85px; }
     <div class="card">
       <h2>Paste your AEO/GEO optimisation template</h2>
       <p class="desc">Claude will score the content against your specific criteria first, then layer in its own AI readiness checks on top.</p>
-      <div class="template-notice" id="template-notice">Paste your template below before running the review. Claude will use it as the primary scoring framework.</div>
-      <div class="form-row">
-        <label>Your AEO/GEO optimisation template</label>
-        <textarea id="inp-template" placeholder="Paste your full AEO/GEO optimisation template or checklist here..." style="min-height:180px"></textarea>
+      <div class="template-notice" id="template-notice">Paddle Creative AEO/GEO template is pre-loaded. Click Run full review to score this post.</div>
+      <div style="background:#e8f5ee;border:1px solid #b8dfc9;border-radius:8px;padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:#2d7a4f">
+        ✓ Paddle Creative AEO/GEO template loaded automatically — no need to paste it in.
       </div>
+      <input type="hidden" id="inp-template" value="">
       <button class="btn btn-primary" onclick="runStage4Score()" id="btn-run-review">
         <span class="spinner hidden" id="spin4"></span>
         Run full review →
@@ -640,7 +640,87 @@ ${JSON.stringify(state.linkOpps)}`;
 }
 
 async function runStage4Score() {
-  const template = document.getElementById('inp-template').value.trim();
+  const template = [
+      'LLM / AEO / GEO NEW WEBPAGE TEMPLATE - PADDLE CREATIVE',
+      '',
+      'Step 1: Define target prompts and user questions',
+      'Define the main prompt or question the page should answer, and 3-5 supporting prompts capturing related user intents. Aligns content with how people actually ask in AI, voice, and chat.',
+      '',
+      'Step 2: Write a clear, conversational introduction',
+      'Checklist:',
+      '- Main user prompt clearly answered within first 2-3 sentences',
+      '- States who the page is for and value it offers',
+      '- Tone is human, clear, conversational (avoid jargon)',
+      '- Includes short TL;DR or summary paragraph',
+      '',
+      'Step 2.1: Add a Quick Answer section after the intro',
+      '- 40-60 words',
+      '- Directly answers the primary prompt',
+      '- Clear and factual',
+      '- No marketing language',
+      '',
+      'Step 3: Step-by-step or structured guide',
+      'Clear sequential steps. Use headings that mirror real questions (e.g. \"How do I enable SSL?\" not \"SSL settings\").',
+      '',
+      'Step 3.1: Add a Quick Steps summary',
+      '- 4-6 steps',
+      '- Short actionable phrases',
+      '- Mirrors the detailed sections later in the guide',
+      '',
+      'Step 4: Add Paddle Insights and expertise',
+      'At least 2 Paddle Insights per page. These must be unique human insights - not AI-generated generalities:',
+      '- Quotes, opinions, or tips from founders, strategists, or designers',
+      '- Mini case study references',
+      '- Observations from real client experiences',
+      '- Unique process insights (\"Here is how we approach X differently at Paddle Creative\")',
+      '- Team commentary that adds human expertise beyond AI-accessible data',
+      '',
+      'Step 5: Add a Key Takeaways section at the end',
+      '- 4-6 bullets',
+      '- Clear factual statements',
+      '- Avoid promotional language',
+      '- Improves answer extraction by AI systems',
+      '',
+      'Step 6: Add Key Concepts section',
+      'After main article, define 3-5 core concepts related to the topic:',
+      '- 40-60 words per definition',
+      '- Written in neutral, educational tone',
+      '- Reinforces topic expertise',
+      '- AI systems prefer sources that both explain AND define concepts',
+      '',
+      'Step 7: Add FAQs',
+      '- 3-5 FAQs based on conversational or prompt-based queries',
+      '- Questions phrased naturally (How do I, What is the best way to)',
+      '- Answers 40-60 words, direct, linked to main content where possible',
+      '- FAQs positioned near bottom of page',
+      '- Wrap in FAQPage schema for Google and LLMs',
+      '',
+      'Step 8: Add supporting media and schema',
+      'Include screenshots, diagrams, or short videos. Add HowTo and FAQ schema markup.',
+      '',
+      'Step 9: Internal linking',
+      'Link to relevant pages to improve site authority and help LLMs contextualise content.',
+      '',
+      'Step 10: Metadata optimisation',
+      '- Title includes primary prompt phrasing',
+      '- Description summarises page value clearly',
+      '- Both concise and human-readable (avoid keyword stuffing)',
+      '- Titles should communicate the question being answered and the benefit',
+      '',
+      'Step 11: Final checklist',
+      '- Primary prompt and 3-5 supporting questions defined',
+      '- Intro clearly answers main prompt',
+      '- Quick Answer snippet added after intro',
+      '- Quick Steps summary added near top of guide',
+      '- Steps and subheadings use natural question phrasing',
+      '- At least 2 Paddle Insights added',
+      '- Key Concepts section added (3-5 concepts, 40-60 words each)',
+      '- FAQs added and marked up with FAQPage schema',
+      '- Key Takeaways section added at end (4-6 bullets, factual, extractable)',
+      '- Media/screenshots embedded',
+      '- Internal links included',
+      '- Metadata written for conversational clarity'
+    ].join('\n');
   if (!state.linkedContent) { alert('Please complete stages 1–3 first.'); return; }
   state.aeoTemplate = template;
 
@@ -678,7 +758,7 @@ Include one finding per major criterion in the template (or 5-7 general ones if 
     const prompt2 = `Review this blog post for AI readiness BEYOND standard AEO/GEO criteria.
 
 BLOG POST:
-${linkedContent}
+${state.linkedContent}
 
 Return JSON:
 {
