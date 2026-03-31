@@ -138,7 +138,8 @@ textarea { min-height: 85px; }
   <!-- API Key input -->
   <div class="api-banner">
     <label>Anthropic API Key</label>
-    <input type="password" id="api-key" placeholder="sk-ant-..." oninput="checkKey(this.value)">
+    <input type="password" id="api-key" placeholder="sk-ant-..." oninput="checkKey(this.value)" onchange="checkKey(this.value)" onpaste="setTimeout(()=>checkKey(document.getElementById('api-key').value),50)">
+    <button onclick="toggleKeyVisibility()" style="padding:5px 10px;font-size:11px;background:#f9f8f5;border:1px solid #ddd;border-radius:6px;cursor:pointer;color:#888;font-family:inherit;white-space:nowrap">Show</button>
     <span class="api-status" id="api-status">Not set</span>
   </div>
 
@@ -197,19 +198,13 @@ textarea { min-height: 85px; }
         <label>Primary keyword / search intent</label>
         <input type="text" id="inp-keyword" placeholder="e.g. brand strategy agency">
       </div>
-      <div class="form-row">
-        <label>Tone of voice guidelines</label>
-        <textarea id="inp-tov" placeholder="Paste Paddle Creative's full tone of voice guidelines here..." style="min-height:120px"></textarea>
-      </div>
+
       <div class="form-row">
         <label>Additional requirements (optional)</label>
         <textarea id="inp-extra" placeholder="Any specific sections, stats to reference, CTAs, examples to avoid..." style="min-height:60px"></textarea>
       </div>
 
-      <div class="form-row">
-        <label>Internal pages / URLs for linking (one per line)</label>
-        <textarea id="inp-links" placeholder="https://paddlecreative.co.uk/services/brand-strategy&#10;https://paddlecreative.co.uk/work&#10;https://paddlecreative.co.uk/about" style="min-height:80px;font-size:12px;font-family:monospace"></textarea>
-      </div>
+
       <button class="btn btn-primary" onclick="runStage2()">
         <span class="spinner hidden" id="spin1"></span>
         Generate blog post →
@@ -428,10 +423,18 @@ const MODEL = "claude-sonnet-4-20250514";
 let state = {};
 
 function getKey() { return document.getElementById('api-key').value.trim(); }
+function toggleKeyVisibility() {
+  const inp = document.getElementById('api-key');
+  const btn = inp.nextElementSibling;
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? 'Show' : 'Hide';
+}
+
 function checkKey(v) {
   const el = document.getElementById('api-status');
-  el.textContent = v.startsWith('sk-ant-') ? '✓ Key set' : 'Not set';
-  el.className = 'api-status' + (v.startsWith('sk-ant-') ? ' ok' : '');
+  const valid = v.startsWith('sk-ant-') || v.startsWith('sk-');
+  el.textContent = valid ? '✓ Key set' : (v.length > 0 ? 'Invalid key format' : 'Not set');
+  el.className = 'api-status' + (valid ? ' ok' : '');
 }
 
 
@@ -474,7 +477,7 @@ async function runStage2() {
   const title = document.getElementById('inp-title').value.trim();
   const overview = document.getElementById('inp-overview').value.trim();
   if (!title || !overview) { alert('Please add a title and overview first.'); return; }
-  if (!getKey()) { alert('Please enter your Anthropic API key first.'); return; }
+  if (!getKey()) { alert('Please enter your Anthropic API key first (starts with sk-ant-).'); return; }
 
   state.title = title;
   state.overview = overview;
@@ -482,9 +485,7 @@ async function runStage2() {
   state.type = document.getElementById('inp-type').value;
   state.audience = document.getElementById('inp-audience').value;
   state.keyword = document.getElementById('inp-keyword').value;
-  state.tovGuidelines = document.getElementById('inp-tov').value;
   state.extra = document.getElementById('inp-extra').value;
-  state.links = document.getElementById('inp-links').value;
 
   goStage(2);
   showSpinner('spin1', true);
@@ -492,7 +493,33 @@ async function runStage2() {
   document.getElementById('btn-stage3').disabled = true;
 
   try {
-    const tovBlock = state.tovGuidelines ? `\n\nTONE OF VOICE GUIDELINES TO FOLLOW:\n${state.tovGuidelines}` : '';
+    const PADDLE_TOV = [
+      'PADDLE CREATIVE TONE OF VOICE:',
+      'Brand personality: Provocatively Playful.',
+      'Provocative: Tell it like it is — honest, no arrogance, challenge the status quo with a knowing wink. Never punch down.',
+      'Playful: Friendly, knowing humour. A twinkle in the eye. Balance playfulness with professionalism.',
+      'Human not corporate: Speak directly to marketers. Make complex ideas simple. Empower, never gatekeep.',
+      'Authentic: We do not pretend to care — we actually do. We do not follow the herd.',
+      '',
+      'WRITING RULES:',
+      '- Speak to one person — always you, not we',
+      '- Short, clear, to the point. Every word must count.',
+      '- Full stops add punch. Use them. Like this.',
+      '- Exclamation marks: use sparingly. Too many = try-hard.',
+      '- Emojis: use with intention, not excessively.',
+      '- No AI language: never use consequently, furthermore, it is worth noting, in conclusion, or robotic phrases.',
+      '- Start sentences with And or Because if it works.',
+      '- Read it aloud — if it sounds awkward, rewrite it.',
+      '- Bullet points: keep them short.',
+      '- Timeless over trendy: avoid internet slang.',
+      '',
+      'HEADLINES: Spark a reaction — a smile, a raised eyebrow, a double-take. Never indifference. Be bold, stir curiosity.',
+      'BAD headline: Streamline Your Website Updates with Webflow.',
+      'GOOD headline: Tired of begging devs for plugin updates? Meet Webflow.',
+      '',
+      'PADDLE CREATIVE VOICE: Do good work and let it do the talking, create something you are proud of but avoid the ego, celebrate progress while striving for improvement, and remember — it is not brain surgery, it is marketing. Do not take everything too seriously.'
+    ].join('\n');
+    const tovBlock = '\n\n' + PADDLE_TOV;
     const sys = `You are a senior content strategist at Paddle Creative, a bold and ambitious brand and creative agency. Your writing is clear, confident and never corporate — it sounds like a smart human, not a bot. You specialise in AEO (Answer Engine Optimisation) and GEO (Generative Engine Optimisation) — writing content that AI systems like ChatGPT, Perplexity and Google AI Overviews can easily extract, quote and recommend.
 
 EVERY blog post you write MUST include ALL of the following sections in this order:
@@ -544,7 +571,7 @@ async function runStage3() {
   document.getElementById('btn-stage4').disabled = true;
 
   const extraLinks = document.getElementById('inp-extra-links').value.trim();
-  const linkList = [state.links, extraLinks].filter(Boolean).join('\n') || '(no internal links provided)';
+  const linkList = extraLinks || '(no internal links provided — add URLs in the box above)';
 
   try {
     const sys1 = `You are an SEO strategist for Paddle Creative. Identify natural internal linking opportunities. Return valid JSON only — no markdown, no explanation.`;
