@@ -138,8 +138,9 @@ textarea { min-height: 85px; }
   <!-- API Key input -->
   <div class="api-banner">
     <label>Anthropic API Key</label>
-    <input type="password" id="api-key" placeholder="sk-ant-..." oninput="checkKey(this.value)" onchange="checkKey(this.value)" onpaste="setTimeout(()=>checkKey(document.getElementById('api-key').value),50)">
+    <input type="password" id="api-key" placeholder="sk-ant-..." oninput="checkKey(this.value)" onchange="checkKey(this.value)" onpaste="setTimeout(()=>checkKey(document.getElementById('api-key').value),50)" onkeyup="checkKey(this.value)">
     <button onclick="toggleKeyVisibility()" style="padding:5px 10px;font-size:11px;background:#f9f8f5;border:1px solid #ddd;border-radius:6px;cursor:pointer;color:#888;font-family:inherit;white-space:nowrap">Show</button>
+    <button onclick="confirmKey()" style="padding:5px 12px;font-size:11px;background:#1a1a1a;color:#fff;border:1px solid #1a1a1a;border-radius:6px;cursor:pointer;font-family:inherit;white-space:nowrap">Confirm</button>
     <span class="api-status" id="api-status">Not set</span>
   </div>
 
@@ -423,6 +424,14 @@ const MODEL = "claude-sonnet-4-20250514";
 let state = {};
 
 function getKey() { return document.getElementById('api-key').value.trim(); }
+function confirmKey() {
+  const v = document.getElementById('api-key').value.trim();
+  checkKey(v);
+  if (!v) { alert('Please paste your Anthropic API key into the field first.'); return; }
+  const valid = v.startsWith('sk-');
+  if (!valid) { alert('That doesn\'t look like a valid Anthropic API key. It should start with sk-ant-'); }
+}
+
 function toggleKeyVisibility() {
   const inp = document.getElementById('api-key');
   const btn = inp.nextElementSibling;
