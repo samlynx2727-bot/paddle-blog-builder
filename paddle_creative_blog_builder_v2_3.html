@@ -139,7 +139,7 @@ textarea { min-height: 85px; }
   <div class="api-banner">
     <label>Anthropic API Key</label>
     <input type="password" id="api-key" placeholder="sk-ant-..." oninput="checkKey(this.value)" onchange="checkKey(this.value)" onpaste="setTimeout(()=>checkKey(document.getElementById('api-key').value),50)" onkeyup="checkKey(this.value)">
-    <button onclick="toggleKeyVisibility()" style="padding:5px 10px;font-size:11px;background:#f9f8f5;border:1px solid #ddd;border-radius:6px;cursor:pointer;color:#888;font-family:inherit;white-space:nowrap">Show</button>
+    <button id="btn-show-key" onclick="toggleKeyVisibility()" style="padding:5px 10px;font-size:11px;background:#f9f8f5;border:1px solid #ddd;border-radius:6px;cursor:pointer;color:#888;font-family:inherit;white-space:nowrap">Show</button>
     <button onclick="confirmKey()" style="padding:5px 12px;font-size:11px;background:#1a1a1a;color:#fff;border:1px solid #1a1a1a;border-radius:6px;cursor:pointer;font-family:inherit;white-space:nowrap">Confirm</button>
     <span class="api-status" id="api-status">Not set</span>
   </div>
@@ -426,15 +426,23 @@ let state = {};
 function getKey() { return document.getElementById('api-key').value.trim(); }
 function confirmKey() {
   const v = document.getElementById('api-key').value.trim();
-  checkKey(v);
   if (!v) { alert('Please paste your Anthropic API key into the field first.'); return; }
   const valid = v.startsWith('sk-');
-  if (!valid) { alert('That doesn\'t look like a valid Anthropic API key. It should start with sk-ant-'); }
+  const el = document.getElementById('api-status');
+  if (valid) {
+    el.textContent = '✓ Key set';
+    el.className = 'api-status ok';
+    alert('API key confirmed! You\'re ready to generate.');
+  } else {
+    el.textContent = 'Invalid key format';
+    el.className = 'api-status';
+    alert('That doesn\'t look right. Your Anthropic API key should start with sk-ant-');
+  }
 }
 
 function toggleKeyVisibility() {
   const inp = document.getElementById('api-key');
-  const btn = inp.nextElementSibling;
+  const btn = document.getElementById('btn-show-key');
   inp.type = inp.type === 'password' ? 'text' : 'password';
   btn.textContent = inp.type === 'password' ? 'Show' : 'Hide';
 }
@@ -825,10 +833,11 @@ For faqs: extract the FAQ questions and answers from the post.`;
     state.templateFields = templateFields;
 
     // ── Build Google Sheets tab-separated version ──
-    const sheetsRows = templateFields.map(f => `${f.label}	${(f.value||'—').replace(/	/g,' ').replace(/
-/g,' | ')}`);
-    const sheetsText = sheetsRows.join('
-');
+    const sheetsRows = templateFields.map(f => {
+      const val = (f.value || '—').split('\t').join(' ').split('\n').join(' | ');
+      return f.label + '\t' + val;
+    });
+    const sheetsText = sheetsRows.join('\n');
     document.getElementById('out-sheets').textContent = sheetsText;
     state.sheetsText = sheetsText;
 
