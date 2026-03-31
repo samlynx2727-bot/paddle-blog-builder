@@ -174,10 +174,11 @@ textarea { min-height: 85px; }
         <div>
           <label>Target word count</label>
           <select id="inp-words">
-            <option value="600">~600 words (quick read)</option>
-            <option value="900" selected>~900 words (standard)</option>
-            <option value="1200">~1,200 words (in-depth)</option>
-            <option value="1500">~1,500 words (pillar)</option>
+            <option value="1000">~1,000 words (short piece)</option>
+            <option value="1300" selected>~1,300 words (standard)</option>
+            <option value="1500">~1,500 words (in-depth)</option>
+            <option value="1800">~1,800 words (comprehensive)</option>
+            <option value="2200">~2,200 words (pillar content)</option>
           </select>
         </div>
         <div>
@@ -241,8 +242,7 @@ textarea { min-height: 85px; }
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn" onclick="goStage(1)">← Edit brief</button>
-      <button class="btn btn-primary" onclick="runStage3()" id="btn-stage3" disabled>
-        <span class="spinner hidden" id="spin3"></span>
+      <button class="btn btn-primary" onclick="goStage(3)" id="btn-stage3" disabled>
         Add internal links →
       </button>
     </div>
@@ -251,17 +251,22 @@ textarea { min-height: 85px; }
   <!-- STAGE 3 -->
   <div class="panel" id="stage3">
     <div class="card">
-      <h2>Internal linking opportunities</h2>
-      <p class="desc">AI-identified opportunities to link to Paddle Creative's existing pages.</p>
+      <h2>Internal linking</h2>
+      <p class="desc">Paste the internal URLs you want Claude to consider, then click the button to find and apply linking opportunities.</p>
       <div class="form-row" style="margin-bottom:1.25rem">
-        <label>Additional URLs to check for linking (one per line)</label>
-        <textarea id="inp-extra-links" placeholder="Paste any additional internal URLs here that you'd like Claude to consider for linking..." style="min-height:80px;font-size:12px;font-family:monospace"></textarea>
-        <button class="btn btn-primary" onclick="runStage3()" style="margin-top:8px;font-size:12px;padding:7px 14px">
-          <span class="spinner hidden" id="spin3b"></span>
-          Re-run link analysis
-        </button>
+        <label>Internal URLs + descriptions</label>
+        <p style="font-size:12px;color:#888;margin-bottom:8px">Paste two columns from your spreadsheet — URL in the first column, description in the second (tab-separated). Or paste one URL per line if you don't have descriptions.</p>
+        <textarea id="inp-extra-links" placeholder="https://paddlecreative.co.uk/services/brand-strategy	This page covers our brand strategy services for B2B companies&#10;https://paddlecreative.co.uk/work	Our portfolio of Webflow projects and case studies&#10;https://paddlecreative.co.uk/about	About the Paddle Creative team and our approach" style="min-height:160px;font-size:12px;font-family:monospace"></textarea>
       </div>
-      <div id="links-list">Click 'Add internal links' from Stage 2 to analyse, or paste URLs above and re-run.</div>
+      <button class="btn btn-primary" onclick="runStage3()" id="btn-run-links">
+        <span class="spinner hidden" id="spin3b"></span>
+        Find and apply internal links →
+      </button>
+    </div>
+    <div class="card hidden" id="links-results-card">
+      <h2>Linking opportunities found</h2>
+      <p class="desc">Claude has identified the following opportunities and applied them to the content.</p>
+      <div id="links-list"></div>
     </div>
     <div class="card">
       <h2>Content with links applied</h2>
@@ -303,7 +308,7 @@ textarea { min-height: 85px; }
           <div class="score-card"><div class="score-val" id="sc-aeo">–</div><div class="score-label">AEO</div></div>
           <div class="score-card"><div class="score-val" id="sc-geo">–</div><div class="score-label">GEO</div></div>
         </div>
-        <div class="rec-section-title">Template findings</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div class="rec-section-title" style="margin-bottom:0">Template findings</div><div style="display:flex;gap:6px"><button onclick="toggleAllRecs('template',true)" class="copy-btn">Select all</button><button onclick="toggleAllRecs('template',false)" class="copy-btn">Deselect all</button></div></div>
         <div id="recs-template">Waiting...</div>
       </div>
 
@@ -315,13 +320,13 @@ textarea { min-height: 85px; }
           <div class="score-card"><div class="score-val" id="sc-entity">–</div><div class="score-label">Entity clarity</div></div>
           <div class="score-card"><div class="score-val" id="sc-overall">–</div><div class="score-label">Overall</div></div>
         </div>
-        <div class="rec-section-title">Additional recommendations</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div class="rec-section-title" style="margin-bottom:0">Additional recommendations</div><div style="display:flex;gap:6px"><button onclick="toggleAllRecs('claude',true)" class="copy-btn">Select all</button><button onclick="toggleAllRecs('claude',false)" class="copy-btn">Deselect all</button></div></div>
         <div id="recs-claude">Waiting...</div>
       </div>
 
       <div class="card">
-        <h2>Quick wins checklist</h2>
-        <p class="desc">Highest-impact actions to improve this post before publishing.</p>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><h2>Quick wins checklist</h2><div style="display:flex;gap:6px"><button onclick="toggleAllRecs('quickwin',true)" class="copy-btn">Select all</button><button onclick="toggleAllRecs('quickwin',false)" class="copy-btn">Deselect all</button></div></div>
+        <p class="desc">Tick the improvements you want included in the refined version. Untick any you want to skip.</p>
         <div id="quick-wins">Generating...</div>
       </div>
     </div>
@@ -359,6 +364,28 @@ textarea { min-height: 85px; }
         <h2 style="color:#2d7a4f">What was improved</h2>
         <p class="desc" style="color:#2d7a4f">A summary of changes made during the refinement.</p>
         <div id="refine-summary" style="font-size:13px;color:#1a1a1a"></div>
+      </div>
+      <div class="card hidden" id="rescore-results">
+        <h2>Refined content scores</h2>
+        <p class="desc">How the scores compare before and after refinement. Green = improved, red = dropped.</p>
+        <div class="score-grid" id="rescore-grid" style="margin-bottom:1rem"></div>
+        <div style="font-size:13px;color:#888" id="rescore-status">Scoring...</div>
+      </div>
+      <div class="card hidden" id="refine-again-card">
+        <h2>Refine again</h2>
+        <p class="desc">Not quite there? Tick the additional recommendations below and run another pass — or add your own notes.</p>
+        <div id="refine-again-recs" style="margin-bottom:1rem">Generating further recommendations...</div>
+        <div class="form-row" style="margin-bottom:1rem">
+          <label>Your own additional instructions (optional)</label>
+          <textarea id="inp-refine-extra" placeholder="e.g. Make the intro punchier, add more Paddle Creative examples, expand the Key Concepts section..." style="min-height:70px"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="runRefineAgain()" id="btn-refine-again">
+            <span class="spinner hidden" id="spin-refine-again"></span>
+            Refine again →
+          </button>
+          <span style="font-size:12px;color:#888" id="refine-again-count"></span>
+        </div>
       </div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
@@ -580,15 +607,25 @@ Format all headings as markdown (# H1, ## H2, ### H3). Write it now — no pream
 }
 
 async function runStage3() {
-  if (!state.content) return;
-  goStage(3);
-  showSpinner('spin3', true);
+  if (!state.content) { alert('Please complete Stage 2 first.'); return; }
+  showSpinner('spin3b', true);
+  document.getElementById('btn-run-links').disabled = true;
   document.getElementById('links-list').textContent = 'Analysing for internal link opportunities...';
   document.getElementById('out-linked').textContent = 'Applying links...';
   document.getElementById('btn-stage4').disabled = true;
+  const linksCard = document.getElementById('links-results-card');
+  if (linksCard) linksCard.classList.remove('hidden');
 
-  const extraLinks = document.getElementById('inp-extra-links').value.trim();
-  const linkList = extraLinks || '(no internal links provided — add URLs in the box above)';
+  const extraLinksRaw = document.getElementById('inp-extra-links').value.trim();
+  // Format URL+description pairs for the prompt — handle tab-separated or URL-only lines
+  const linkList = extraLinksRaw
+    ? extraLinksRaw.split('\n').filter(l => l.trim()).map(line => {
+        const parts = line.split('\t');
+        const url = parts[0].trim();
+        const desc = parts[1] ? parts[1].trim() : '';
+        return desc ? `${url} — ${desc}` : url;
+      }).join('\n')
+    : '(no internal links provided — add URLs in the box above)';
 
   try {
     const sys1 = `You are an SEO strategist for Paddle Creative. Identify natural internal linking opportunities. Return valid JSON only — no markdown, no explanation.`;
@@ -597,10 +634,10 @@ async function runStage3() {
 BLOG POST:
 ${state.content}
 
-INTERNAL PAGES:
+INTERNAL PAGES (format: URL — description of page content):
 ${linkList}
 
-Return JSON: {"opportunities": [{"anchor": "anchor text in the post", "url": "the URL", "reason": "why this link fits", "context": "the sentence it appears in"}]}`;
+Use the page descriptions to find genuinely relevant linking opportunities — not just keyword matches. Return JSON: {"opportunities": [{"anchor": "anchor text in the post", "url": "the URL", "reason": "why this link fits based on the page description", "context": "the sentence it appears in"}]}`;
 
     const raw1 = await callClaude(sys1, prompt1);
     let parsed;
@@ -636,7 +673,8 @@ ${JSON.stringify(state.linkOpps)}`;
   } catch(e) {
     document.getElementById('links-list').innerHTML = `<span style="color:#c0392b">Error: ${e.message}</span>`;
   }
-  showSpinner('spin3', false);
+  showSpinner('spin3b', false);
+  document.getElementById('btn-run-links').disabled = false;
 }
 
 async function runStage4Score() {
@@ -795,17 +833,17 @@ Include 4-6 additional recommendations and 3-5 quick wins.`;
 
     const findings = scores.template_findings || [];
     document.getElementById('recs-template').innerHTML = findings.length
-      ? findings.map(r => `<div class="rec-item"><div class="rec-dot ${r.type}"></div><div style="flex:1"><span style="font-size:12px;font-weight:600;display:block;margin-bottom:2px">${r.criterion||''}</span><span style="font-size:13px">${r.finding}</span></div><span class="rec-source template">Your template</span></div>`).join('')
+      ? findings.map((r,i) => `<div class="rec-item"><label style="display:flex;align-items:flex-start;gap:10px;width:100%;cursor:pointer"><input type="checkbox" class="rec-checkbox" data-source="template" data-index="${i}" checked style="margin-top:3px;flex-shrink:0;width:15px;height:15px;cursor:pointer"><div style="flex:1"><span style="font-size:12px;font-weight:600;display:block;margin-bottom:2px">${r.criterion||''}</span><span style="font-size:13px">${r.finding}</span></div><span class="rec-source template">Your template</span></label></div>`).join('')
       : '<p style="color:#888;font-size:13px">No findings generated.</p>';
 
     const addRecs = claudeChecks.additional_recommendations || [];
     document.getElementById('recs-claude').innerHTML = addRecs.length
-      ? addRecs.map(r => `<div class="rec-item"><div class="rec-dot ${r.type}"></div><span style="font-size:13px;flex:1">${r.text}</span><span class="rec-source claude">Claude</span></div>`).join('')
+      ? addRecs.map((r,i) => `<div class="rec-item"><label style="display:flex;align-items:flex-start;gap:10px;width:100%;cursor:pointer"><input type="checkbox" class="rec-checkbox" data-source="claude" data-index="${i}" checked style="margin-top:3px;flex-shrink:0;width:15px;height:15px;cursor:pointer"><span style="font-size:13px;flex:1">${r.text}</span><span class="rec-source claude">Claude</span></label></div>`).join('')
       : '<p style="color:#888;font-size:13px">No additional recommendations.</p>';
 
     const wins = claudeChecks.quick_wins || [];
     document.getElementById('quick-wins').innerHTML = wins.length
-      ? `<div class="checklist-grid">${wins.map(w=>`<div class="checklist-item"><span style="color:#b5720a;font-size:12px;flex-shrink:0">◆</span><span style="font-size:12px">${w}</span></div>`).join('')}</div>`
+      ? wins.map((w,i) => `<div class="checklist-item" style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:#f9f8f5;border-radius:8px;border:1px solid #e0ddd6"><label style="display:flex;align-items:flex-start;gap:8px;width:100%;cursor:pointer"><input type="checkbox" class="rec-checkbox" data-source="quickwin" data-index="${i}" checked style="margin-top:1px;flex-shrink:0;width:15px;height:15px;cursor:pointer"><span style="font-size:12px">${w}</span></label></div>`).join('')
       : '<p style="color:#888;font-size:13px">No quick wins generated.</p>';
 
     document.getElementById('review-results').classList.remove('hidden');
@@ -950,6 +988,94 @@ ${meta.content_part2}`);
   showSpinner('spin6', false);
 }
 
+async function runRefineAgain() {
+  const base = state.refinedContent || state.linkedContent;
+  if (!base) return;
+  showSpinner('spin-refine-again', true);
+  document.getElementById('btn-refine-again').disabled = true;
+
+  // Collect checked further recs + manual instructions
+  const checkedRecs = [];
+  document.querySelectorAll('.again-checkbox:checked').forEach(cb => {
+    const idx = parseInt(cb.dataset.index);
+    if (state.furtherRecs?.[idx]) checkedRecs.push(state.furtherRecs[idx].text);
+  });
+  const extraInstructions = document.getElementById('inp-refine-extra').value.trim();
+  if (extraInstructions) checkedRecs.push(extraInstructions);
+
+  if (checkedRecs.length === 0) {
+    alert('Please tick at least one recommendation or add your own instructions before refining again.');
+    showSpinner('spin-refine-again', false);
+    document.getElementById('btn-refine-again').disabled = false;
+    return;
+  }
+
+  try {
+    const sys = `You are a senior content editor at Paddle Creative. Refine this already-improved blog post further based on the recommendations provided. Keep all existing improvements, CTAs, and internal links intact. Return only the full improved blog post in markdown — no preamble.`;
+    const prompt = `Further refine this blog post based on these additional recommendations:
+
+BLOG POST:
+${base}
+
+FURTHER RECOMMENDATIONS:
+${checkedRecs.map((r,i) => `${i+1}. ${r}`).join('\n')}
+
+Return the full further-refined blog post now.`;
+
+    const refined2 = await callClaude(sys, prompt);
+    state.refinedContent = refined2;
+
+    // Update the refined content output box
+    document.getElementById('out-refined').textContent = refined2;
+
+    // Re-score again
+    document.getElementById('rescore-status').textContent = 'Re-scoring...';
+    const rescoreSys = `You are an AEO/GEO expert reviewer. Score content against the Paddle Creative optimisation template. Return valid JSON only.`;
+    const rescorePrompt = `Score this blog post. Return JSON: {"template_score": 0-100, "aeo_score": 0-100, "geo_score": 0-100, "overall_score": 0-100, "improvement_summary": "1-2 sentence summary of content quality"}
+
+BLOG POST:
+${refined2}`;
+    const rescoreRaw = await callClaude(rescoreSys, rescorePrompt);
+    let rescore2;
+    try { rescore2 = JSON.parse(rescoreRaw.replace(/```json|```/g,'')); } catch { rescore2 = null; }
+    if (rescore2) {
+      state.refinedScores = rescore2;
+      const sc = v => v >= 80 ? 'high' : v >= 60 ? 'mid' : 'low';
+      const orig = state.scores || {};
+      const diff = (newVal, oldVal) => {
+        const d = (newVal||0) - (oldVal||0);
+        return d > 0 ? `<span style="color:#2d7a4f;font-size:11px;margin-left:4px">+${d}</span>` : d < 0 ? `<span style="color:#c0392b;font-size:11px;margin-left:4px">${d}</span>` : `<span style="color:#888;font-size:11px;margin-left:4px">–</span>`;
+      };
+      document.getElementById('rescore-grid').innerHTML = `
+        <div class="score-card"><div class="score-val ${sc(rescore2.template_score)}">${rescore2.template_score}${diff(rescore2.template_score, orig.template_score)}</div><div class="score-label">Template score</div></div>
+        <div class="score-card"><div class="score-val ${sc(rescore2.aeo_score)}">${rescore2.aeo_score}${diff(rescore2.aeo_score, orig.aeo_score)}</div><div class="score-label">AEO</div></div>
+        <div class="score-card"><div class="score-val ${sc(rescore2.geo_score)}">${rescore2.geo_score}${diff(rescore2.geo_score, orig.geo_score)}</div><div class="score-label">GEO</div></div>
+        <div class="score-card"><div class="score-val ${sc(rescore2.overall_score)}">${rescore2.overall_score}${diff(rescore2.overall_score, orig.overall_score)}</div><div class="score-label">Overall</div></div>`;
+      document.getElementById('rescore-status').textContent = rescore2.improvement_summary || 'Re-scored.';
+    }
+
+    // Clear the textarea and update notice
+    document.getElementById('inp-refine-extra').value = '';
+    document.getElementById('refine-notice').textContent = '✓ Content refined again and ready for upload.';
+    document.getElementById('refine-again-recs').innerHTML = '<p style="color:#2d7a4f;font-size:13px">✓ Refinement applied. Run again if needed.</p>';
+    document.getElementById('refine-again-count').textContent = '';
+
+  } catch(e) {
+    alert('Error during refinement: ' + e.message);
+  }
+  showSpinner('spin-refine-again', false);
+  document.getElementById('btn-refine-again').disabled = false;
+}
+
+function toggleFurtherRecs(checked) {
+  document.querySelectorAll('.again-checkbox').forEach(cb => cb.checked = checked);
+}
+
+function toggleAllRecs(source, checked) {
+  document.querySelectorAll(`.rec-checkbox[data-source="${source}"]`).forEach(cb => cb.checked = checked);
+}
+
+
 function copyUploadTemplate() {
   const fields = state.templateFields || [];
   const text = fields.map(f => `${f.label}\n${f.value || '—'}`).join('\n\n---\n\n');
@@ -966,12 +1092,16 @@ async function runStage5Refine() {
   document.getElementById('btn-run-refine').disabled = true;
   document.getElementById('refine-results').classList.add('hidden');
 
+  // Collect only checked recommendations
   const allRecs = [];
-  if (state.scores) {
-    (state.scores.template_findings || []).forEach(r => allRecs.push(r.finding));
-    (state.scores.additional_recommendations || []).forEach(r => allRecs.push(r.text));
-    (state.scores.quick_wins || []).forEach(r => allRecs.push(r));
-  }
+  document.querySelectorAll('.rec-checkbox:checked').forEach(cb => {
+    const src = cb.dataset.source;
+    const idx = parseInt(cb.dataset.index);
+    if (src === 'template' && state.scores?.template_findings?.[idx]) allRecs.push(state.scores.template_findings[idx].finding);
+    if (src === 'claude' && state.scores?.additional_recommendations?.[idx]) allRecs.push(state.scores.additional_recommendations[idx].text);
+    if (src === 'quickwin' && state.scores?.quick_wins?.[idx]) allRecs.push(state.scores.quick_wins[idx]);
+  });
+  const skippedCount = document.querySelectorAll('.rec-checkbox:not(:checked)').length;
 
   try {
     const sys = `You are a senior content editor at Paddle Creative. You are given a blog post and a list of improvement recommendations from an AEO/GEO review. Your job is to rewrite and improve the blog post to address every recommendation, while keeping the core content, structure, TOV, and CTA intact. Return only the improved blog post in markdown — no preamble or explanation.`;
@@ -994,7 +1124,91 @@ Return the full improved blog post now.`;
 
     document.getElementById('refine-results').classList.remove('hidden');
     document.getElementById('refine-notice').textContent = '✓ Content refined and ready for upload.';
+
+    // ── Re-score the refined content ──
+    document.getElementById('rescore-results').classList.remove('hidden');
+    document.getElementById('rescore-status').textContent = 'Scoring refined content...';
+    try {
+      const rescoreSys = `You are an AEO/GEO expert reviewer. Score content against the Paddle Creative optimisation template. Return valid JSON only.`;
+      const rescorePrompt = `Score this refined blog post. Return JSON: {"template_score": 0-100, "aeo_score": 0-100, "geo_score": 0-100, "overall_score": 0-100, "improvement_summary": "1-2 sentence summary of how this compares to the original"}
+
+BLOG POST:
+${state.refinedContent}`;
+      const rescoreRaw = await callClaude(rescoreSys, rescorePrompt);
+      let rescore;
+      try { rescore = JSON.parse(rescoreRaw.replace(/```json|```/g,'')); } catch { rescore = null; }
+      if (rescore) {
+        state.refinedScores = rescore;
+        const sc = v => v >= 80 ? 'high' : v >= 60 ? 'mid' : 'low';
+        const orig = state.scores || {};
+        const diff = (newVal, oldVal) => {
+          const d = (newVal||0) - (oldVal||0);
+          return d > 0 ? `<span style="color:#2d7a4f;font-size:11px;margin-left:4px">+${d}</span>` : d < 0 ? `<span style="color:#c0392b;font-size:11px;margin-left:4px">${d}</span>` : `<span style="color:#888;font-size:11px;margin-left:4px">–</span>`;
+        };
+        document.getElementById('rescore-grid').innerHTML = `
+          <div class="score-card"><div class="score-val ${sc(rescore.template_score)}">${rescore.template_score}${diff(rescore.template_score, orig.template_score)}</div><div class="score-label">Template score</div></div>
+          <div class="score-card"><div class="score-val ${sc(rescore.aeo_score)}">${rescore.aeo_score}${diff(rescore.aeo_score, orig.aeo_score)}</div><div class="score-label">AEO</div></div>
+          <div class="score-card"><div class="score-val ${sc(rescore.geo_score)}">${rescore.geo_score}${diff(rescore.geo_score, orig.geo_score)}</div><div class="score-label">GEO</div></div>
+          <div class="score-card"><div class="score-val ${sc(rescore.overall_score)}">${rescore.overall_score}${diff(rescore.overall_score, orig.overall_score)}</div><div class="score-label">Overall</div></div>`;
+        document.getElementById('rescore-status').textContent = rescore.improvement_summary || 'Rescored successfully.';
+
+        // ── Generate further recommendations for refine-again ──
+        document.getElementById('refine-again-card').classList.remove('hidden');
+        document.getElementById('refine-again-recs').textContent = 'Generating further recommendations...';
+        try {
+          const furtherSys = `You are an AEO/GEO content expert. Review a blog post that has already been refined once and identify remaining improvements. Return valid JSON only.`;
+          const furtherPrompt = `This blog post has already been through one round of refinement. Identify the most important remaining improvements needed to maximise its AEO/GEO score and AI search visibility.
+
+BLOG POST:
+${state.refinedContent}
+
+Current scores — Template: ${rescore.template_score}, AEO: ${rescore.aeo_score}, GEO: ${rescore.geo_score}, Overall: ${rescore.overall_score}
+
+Return JSON: {"further_recommendations": [{"type": "ok|warn|fix", "text": "specific actionable recommendation"}]}
+Include 4-6 recommendations. Focus on what would make the biggest difference to the remaining gaps.`;
+          const furtherRaw = await callClaude(furtherSys, furtherPrompt);
+          let further;
+          try { further = JSON.parse(furtherRaw.replace(/```json|```/g,'')); } catch { further = {further_recommendations:[]}; }
+          state.furtherRecs = further.further_recommendations || [];
+          document.getElementById('refine-again-recs').innerHTML = state.furtherRecs.length
+            ? `<div style="margin-bottom:8px;display:flex;gap:6px"><button onclick="toggleFurtherRecs(true)" class="copy-btn">Select all</button><button onclick="toggleFurtherRecs(false)" class="copy-btn">Deselect all</button></div>` +
+              state.furtherRecs.map((r,i) => `<div class="rec-item"><label style="display:flex;align-items:flex-start;gap:10px;width:100%;cursor:pointer"><input type="checkbox" class="again-checkbox" data-index="${i}" checked style="margin-top:3px;flex-shrink:0;width:15px;height:15px;cursor:pointer"><div class="rec-dot ${r.type}" style="margin-top:5px;flex-shrink:0"></div><span style="font-size:13px;flex:1">${r.text}</span></label></div>`).join('')
+            : '<p style="color:#888;font-size:13px">No further recommendations generated — content looks good!</p>';
+          const count = state.furtherRecs.length;
+          document.getElementById('refine-again-count').textContent = count ? `${count} recommendation${count!==1?'s':''} ready` : '';
+        } catch(e2) {
+          document.getElementById('refine-again-recs').textContent = 'Could not generate further recommendations.';
+        }
+      }
+    } catch(e) {
+      document.getElementById('rescore-status').textContent = 'Could not rescore — ' + e.message;
+    }
     document.getElementById('btn-stage6').disabled = false;
+
+    // ── Show refine-again card with fresh recommendations ──
+    try {
+      const againSys = `You are an AEO/GEO content expert. Given a refined blog post and its scores, identify 3-5 specific remaining improvements that would push the scores higher. Return valid JSON only.`;
+      const againPrompt = `This blog post has been refined. Scores: Template ${rescore ? rescore.template_score : '?'}/100, AEO ${rescore ? rescore.aeo_score : '?'}/100, GEO ${rescore ? rescore.geo_score : '?'}/100, Overall ${rescore ? rescore.overall_score : '?'}/100.
+
+BLOG POST:
+${state.refinedContent}
+
+Identify 3-5 specific remaining improvements. Return JSON: {"recommendations": [{"type": "ok|warn|fix", "text": "specific recommendation"}]}`;
+      const againRaw = await callClaude(againSys, againPrompt);
+      let againParsed;
+      try { againParsed = JSON.parse(againRaw.replace(/```json|```/g,'')); } catch { againParsed = {recommendations:[]}; }
+      state.furtherRecs = againParsed.recommendations || [];
+      const againEl = document.getElementById('refine-again-recs');
+      if (state.furtherRecs.length) {
+        againEl.innerHTML = state.furtherRecs.map((r,i) => `<div class="rec-item"><label style="display:flex;align-items:flex-start;gap:10px;width:100%;cursor:pointer"><input type="checkbox" class="again-checkbox" data-index="${i}" checked style="margin-top:3px;flex-shrink:0;width:15px;height:15px;cursor:pointer"><div style="flex:1"><div class="rec-dot ${r.type}" style="display:inline-block;margin-right:6px;vertical-align:middle"></div><span style="font-size:13px">${r.text}</span></div></label></div>`).join('');
+      } else {
+        againEl.innerHTML = '<p style="color:#888;font-size:13px">No further recommendations — content looks strong!</p>';
+      }
+      document.getElementById('refine-again-card').classList.remove('hidden');
+    } catch(e) {
+      document.getElementById('refine-again-recs').textContent = 'Could not generate further recommendations.';
+      document.getElementById('refine-again-card').classList.remove('hidden');
+    }
   } catch(e) {
     document.getElementById('refine-results').classList.remove('hidden');
     document.getElementById('out-refined').innerHTML = `<span style="color:#c0392b">Error: ${e.message}</span>`;
